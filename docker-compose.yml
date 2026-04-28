@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: medassist_pg
+    environment:
+      POSTGRES_USER: medassist_user
+      POSTGRES_PASSWORD: medassist_pass
+      POSTGRES_DB: medassist
+    ports:
+      - "5434:5432"
+    volumes:
+      - medassist_data:/var/lib/postgresql/data
+    command: >
+      postgres
+        -c shared_preload_libraries='pg_stat_statements'
+        -c pg_stat_statements.track=all 
+
+  flyway:
+    image: flyway/flyway:10
+    container_name: medassist_flyway
+    depends_on:
+      - postgres
+    volumes:
+      - ./flyway/sql:/flyway/sql
+      - ./flyway/conf:/flyway/conf
+    command:
+      - "-configFiles=/flyway/conf/flyway.conf"
+      - "-connectRetries=10"
+      - "migrate"
+
+volumes:
+  medassist_data:
