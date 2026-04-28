@@ -1,33 +1,17 @@
-==================================================================
-=========== -- V1.1__seed_data.sql : Jeu de données de test -- 
-==================================================================
-=========== -- ─── Patients 
-──────────────────────────────────────────────────────
-── 
-INSERT INTO patients (first_name, last_name, birth_date, gender, ssn, phone, email, 
-address_line1, address_line2, city, postal_code) VALUES 
-('Marie', 
-'Dupont', 
-'1985-03-15', 'F', '285037512345', '0601020304', 
-'marie.dupont@email.com', '12 Rue de la Paix', NULL, 'Paris', '75002'), 
-('Jean',  
-'Martin', 
-'1972-08-22', 'M', '172086912345', '0611223344', 
-'jean.martin@email.com', '5 Avenue des Champs', 'Apt 3B', 'Lyon', '69001'), 
-('Sophie',   'Bernard',   '1990-11-30', 'F', '290117512345', '0622334455', 
-'sophie.b@email.com', '28 Rue du Commerce', NULL, 'Marseille', '13001'), 
-('Pierre',   'Leroy',  '1968-05-10', 'M', '168056912345', '0633445566', 
-'p.leroy@email.com', '3 Place de la République', NULL, 'Toulouse', '31000'), 
-('Isabelle',  'Moreau',   '1995-01-25', 'F', '295017512345', '0644556677', 
-'isa.moreau@email.com', '15 Boulevard Victor Hugo', 'Bât C', 'Nantes', '44000'), 
-('François', 'Garcia', 
-'1960-12-03', 'M', '160126912345', NULL, 
-NULL, '7 Impasse des Lilas', NULL, 'Bordeaux', '33000'), 
-('Camille',  'Roux',      
-'2001-07-18', 'F', '201077512345', '0666778899', 
-'camille.roux@email.com', NULL, NULL, NULL, NULL), 
-('Antoine',  'Fournier',  '1988-09-08', 'M', '188096912345', '0677889900', 
-'a.fournier@email.com', '42 Rue Pasteur', NULL, 'Lille', '59000'); -- ─── Consultations (avec incohérences volontaires sur doctor_name) ── 
+-- V2__seed_data.sql : Jeu de données de test
+
+-- Patients
+INSERT INTO patients (first_name, last_name, birth_date, gender, ssn, phone, email, address_line1, address_line2, city, postal_code) VALUES
+('Marie', 'Dupont', '1985-03-15', 'F', '285037512345', '0601020304', 'marie.dupont@email.com', '12 Rue de la Paix', NULL, 'Paris', '75002'),
+('Jean', 'Martin', '1972-08-22', 'M', '172086912345', '0611223344', 'jean.martin@email.com', '5 Avenue des Champs', 'Apt 3B', 'Lyon', '69001'),
+('Sophie', 'Bernard', '1990-11-30', 'F', '290117512345', '0622334455', 'sophie.b@email.com', '28 Rue du Commerce', NULL, 'Marseille', '13001'),
+('Pierre', 'Leroy', '1968-05-10', 'M', '168056912345', '0633445566', 'p.leroy@email.com', '3 Place de la République', NULL, 'Toulouse', '31000'),
+('Isabelle', 'Moreau', '1995-01-25', 'F', '295017512345', '0644556677', 'isa.moreau@email.com', '15 Boulevard Victor Hugo', 'Bât C', 'Nantes', '44000'),
+('François', 'Garcia', '1960-12-03', 'M', '160126912345', NULL, NULL, '7 Impasse des Lilas', NULL, 'Bordeaux', '33000'),
+('Camille', 'Roux', '2001-07-18', 'F', '201077512345', '0666778899', 'camille.roux@email.com', NULL, NULL, NULL, NULL),
+('Antoine', 'Fournier', '1988-09-08', 'M', '188096912345', '0677889900', 'a.fournier@email.com', '42 Rue Pasteur', NULL, 'Lille', '59000');
+
+-- Consultations (avec incohérences volontaires sur doctor_name)
 INSERT INTO consultations (patient_id, doctor_name, consultation_date, symptoms, 
 diagnosis, notes, consultation_type, fee_amount, is_paid) VALUES 
 (1, 'Dr Martin',    
@@ -67,8 +51,9 @@ NULL, 'Rappel DTP', 'GENERAL', 25.00, FALSE),
 '2023-11-10 14:00', 'Grippe', 
 'Grippe saisonnière', 'Repos + paracétamol', 'GENERAL', 25.00, TRUE), 
 (4, 'Dr Petit Anne',   '2023-09-20 10:00', 'Bilan santé', 
-'Cholestérol limite', 'Régime alimentaire', 'GENERAL', 25.00, TRUE); -- ─── Prescriptions 
-────────────────────────────────────────────────── 
+'Cholestérol limite', 'Régime alimentaire', 'GENERAL', 25.00, TRUE);
+
+-- Prescriptions
 INSERT INTO prescriptions (consultation_id, medication_name, dosage, 
 frequency, duration_days, notes) VALUES 
 (1, 'Paracétamol', '1000mg', '3 fois par jour', 10, 'Pendant les crises'), 

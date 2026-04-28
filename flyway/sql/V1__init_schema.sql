@@ -1,29 +1,24 @@
-==================================================================
-=========== -- V1__init_schema.sql : Création du schéma initial -- 
-==================================================================
-=========== 
-CREATE EXTENSION IF NOT EXISTS pgcrypto; 
-  
-CREATE TABLE patients ( 
-    id           BIGSERIAL    PRIMARY KEY, 
-    first_name      VARCHAR(100) NOT NULL, 
-    last_name       VARCHAR(100) NOT NULL, 
-    birth_date   DATE         NOT NULL, 
-    gender       CHAR(1)      NOT NULL CHECK (gender IN ('M', 'F')), 
-    ssn          VARCHAR(15)  UNIQUE NOT NULL, 
-    phone        VARCHAR(20), 
-    email        VARCHAR(255), 
-    address_line1   VARCHAR(255), 
-    address_line2   VARCHAR(255), 
-    city         VARCHAR(100), 
-    postal_code  VARCHAR(10), 
-    created_at   TIMESTAMP    NOT NULL DEFAULT 
-CURRENT_TIMESTAMP, 
-    updated_at   TIMESTAMP    NOT NULL DEFAULT 
-CURRENT_TIMESTAMP 
-); 
-  
-CREATE INDEX idx_patients_name ON patients (last_name, first_name); 
+-- V1__init_schema.sql : Création du schéma initial
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE patients (
+    id           BIGSERIAL    PRIMARY KEY,
+    first_name      VARCHAR(100) NOT NULL,
+    last_name       VARCHAR(100) NOT NULL,
+    birth_date   DATE         NOT NULL,
+    gender       CHAR(1)      NOT NULL CHECK (gender IN ('M', 'F')),
+    ssn          VARCHAR(15)  UNIQUE NOT NULL,
+    phone        VARCHAR(20),
+    email        VARCHAR(255),
+    address_line1   VARCHAR(255),
+    address_line2   VARCHAR(255),
+    city         VARCHAR(100),
+    postal_code  VARCHAR(10),
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_patients_name ON patients (last_name, first_name);
 CREATE INDEX idx_patients_ssn ON patients (ssn); 
   
 CREATE TABLE consultations ( 
