@@ -19,10 +19,11 @@ Migrer la plateforme MedAssist (système SaaS de gestion de dossiers médicaux) 
 | A | Restructuration adresses (1-N) | ✅ Implémentée | Expand-Contract | Aucune |
 | B | Normalisation doctor_name | ✅ Implémentée | Expand-Contract + Dédup | Aucune |
 | E | Partitionnement consultations | ✅ Implémentée | Shadow Table + Swap | Aucune |
-| C | Update gender field | ❌ Non implémenté | - | - |
-| D | Chiffrement SSN | ❌ Non implémenté | - | - |
+| C | Update gender field | ✅ Implémentée | Expand-Contract | Aucune |
+| D | Chiffrement SSN | ✅ Implémentée | Expand-Contract | Aucune |
 
 **TP Focus :** A, B, E (3 plus critiques) ✅ COMPLÈTES
+**Bonus :** C, D ✅ Implémentées
 
 ---
 
@@ -50,6 +51,8 @@ docker exec -it medassist_pg psql -U medassist_user -d medassist
 docker exec -it medassist_pg psql -U medassist_user -d medassist -f /tests/test_evolution_A.sql
 docker exec -it medassist_pg psql -U medassist_user -d medassist -f /tests/test_evolution_B.sql
 docker exec -it medassist_pg psql -U medassist_user -d medassist -f /tests/test_evolution_E.sql
+docker exec -it medassist_pg psql -U medassist_user -d medassist -f /tests/test_evolution_C.sql
+docker exec -it medassist_pg psql -U medassist_user -d medassist -f /tests/test_evolution_D.sql
 ```
 
 ---
@@ -59,7 +62,7 @@ docker exec -it medassist_pg psql -U medassist_user -d medassist -f /tests/test_
 ```
 flyway/sql/
 ├── V1__init_schema.sql              # Schema initial ✅
-├── V1.1__seed_data.sql              # Test data ✅
+├── V2__seed_data.sql                # Test data ✅
 │
 ├── V2__evolution_A_expand.sql       # Phase 1 : CREATE addresses table
 ├── V3__evolution_A_backfill.sql     # Phase 2 : Migrate addresses data
@@ -69,9 +72,17 @@ flyway/sql/
 ├── V6__evolution_B_backfill.sql     # Phase 2 : Deduplicate & migrate doctors
 ├── V7__evolution_B_contract.sql     # Phase 3 : DROP doctor_name, add FK
 │
-├── V8__evolution_E_create_part.sql  # Phase 1 : CREATE partitioned consultations_v2
-├── V9__evolution_E_backfill.sql     # Phase 2 : COPY data by batch (5M rows/batch)
-├── V10__evolution_E_swap.sql        # Phase 3 : SWAP tables (production cutover)
+├── V9__evolution_E_create_partitioned.sql  # Phase 1 : CREATE partitioned consultations_v2
+├── V10__evolution_E_backfill_batched.sql   # Phase 2 : COPY data by batch (5M rows/batch)
+├── V11__evolution_E_swap.sql              # Phase 3 : SWAP tables (production cutover)
+│
+├── V12__evolution_C_expand.sql       # Phase 1 : CREATE gender_ref + gender_code
+├── V13__evolution_C_backfill.sql     # Phase 2 : Backfill gender_code
+├── V14__evolution_C_contract.sql     # Phase 3 : Replace gender
+│
+├── V15__evolution_D_expand.sql       # Phase 1 : ADD ssn_encrypted + ssn_hash
+├── V16__evolution_D_backfill.sql     # Phase 2 : Encrypt existing SSN
+├── V17__evolution_D_contract.sql     # Phase 3 : DROP ssn cleartext
 │
 └── rollback/
     ├── R_V2__rollback_A.sql         # Rollback Évolution A
@@ -80,7 +91,9 @@ flyway/sql/
 tests/
 ├── test_evolution_A.sql    # Tests de validation A
 ├── test_evolution_B.sql    # Tests de validation B
-└── test_evolution_E.sql    # Tests de validation E
+├── test_evolution_E.sql    # Tests de validation E
+├── test_evolution_C.sql    # Tests de validation C
+└── test_evolution_D.sql    # Tests de validation D
 ```
 
 ---
@@ -133,15 +146,53 @@ tests/
 **Solution V2 :** Partitionner par RANGE (consultation_date) : 2021, 2022, 2023, 2024, 2025, future
 
 **Stratégie :** Shadow Table + Rename/Swap + Backfill Batching  
-- V8 : CREATE TABLE consultations_v2 (PARTITIONED)
-- V9 : COPY data par batch (5M lignes)
-- V10 : ALTER TABLE swap (rename old→shadow, v2→consultations)
+- V9 : CREATE TABLE consultations_v2 (PARTITIONED)
+- V10 : COPY data par batch (5M lignes)
+- V11 : ALTER TABLE swap (rename old→shadow, v2→consultations)
 
 **Files :**
-- ✅ V8__evolution_E_create_partitioned.sql
-- ✅ V9__evolution_E_backfill_batched.sql
-- ✅ V10__evolution_E_swap.sql
+- ✅ V9__evolution_E_create_partitioned.sql
+- ✅ V10__evolution_E_backfill_batched.sql
+- ✅ V11__evolution_E_swap.sql
 - ✅ test_evolution_E.sql
+
+---
+
+### ✅ Évolution C : Refonte du champ gender
+
+**Problème V1 :** `gender` en CHAR(1) limité à M/F
+
+**Solution V2 :** Table `gender_ref` + `gender` étendu (M/F/NB/U)
+
+**Stratégie :** Expand-Contract  
+- V12 : CREATE gender_ref + colonne gender_code + trigger
+- V13 : Backfill gender_code
+- V14 : Replace gender
+
+**Files :**
+- ✅ V12__evolution_C_expand.sql
+- ✅ V13__evolution_C_backfill.sql
+- ✅ V14__evolution_C_contract.sql
+- ✅ test_evolution_C.sql
+
+---
+
+### ✅ Évolution D : Chiffrement SSN
+
+**Problème V1 :** `ssn` en clair
+
+**Solution V2 :** `ssn_encrypted` + `ssn_hash` (pgcrypto)
+
+**Stratégie :** Expand-Contract  
+- V15 : ADD ssn_encrypted + ssn_hash + trigger
+- V16 : Backfill encryption
+- V17 : DROP ssn cleartext
+
+**Files :**
+- ✅ V15__evolution_D_expand.sql
+- ✅ V16__evolution_D_backfill.sql
+- ✅ V17__evolution_D_contract.sql
+- ✅ test_evolution_D.sql
 
 ---
 
@@ -194,7 +245,19 @@ docker-compose run --rm flyway -target=4 migrate  # Retour avant B
 ```
 
 Scripts fournis :
-- R_V2__rollback_A.sql
+- R_V3__rollback_evolution_A_expand.sql
+- R_V6__rollback_evolution_B_expand.sql
+- R_V7__rollback_evolution_B_backfill.sql
+- R_V8__rollback_evolution_B_contract.sql
+- R_V9__rollback_evolution_E_create_partitioned.sql
+- R_V10__rollback_evolution_E_backfill_batched.sql
+- R_V11__rollback_evolution_E_swap.sql
+- R_V12__rollback_evolution_C_expand.sql
+- R_V13__rollback_evolution_C_backfill.sql
+- R_V14__rollback_evolution_C_contract.sql
+- R_V15__rollback_evolution_D_expand.sql
+- R_V16__rollback_evolution_D_backfill.sql
+- R_V17__rollback_evolution_D_contract.sql
 
 ---
 
@@ -205,6 +268,8 @@ Scripts fournis :
 | Évolution A | 2h | 1 dimanche | ✅ Scripts ready |
 | Évolution B | 3h | 1-2 dimanches | ✅ Scripts ready |
 | Évolution E | 4-5h | 2 dimanches | ✅ Scripts ready |
+| Évolution C | 1h | - | ✅ Scripts ready |
+| Évolution D | 1-2h | - | ✅ Scripts ready |
 | Tests | 2h | - | ✅ Scripts ready |
 | Docs | 1h | - | ✅ En cours |
 
@@ -284,7 +349,7 @@ docker-compose run --rm flyway undo
 ## 📦 Livrables
 
 - ✅ README.md (ce fichier)
-- 📝 Scripts Flyway V1→V10
+- 📝 Scripts Flyway V1→V17
 - 🔙 Scripts de rollback
 - 🧪 Scripts de tests (test_evolution_*.sql)
 - 🐳 docker-compose.yml
@@ -296,10 +361,6 @@ docker-compose run --rm flyway undo
 
 1. ✅ Lancer `docker-compose up -d postgres`
 2. ✅ Exécuter `docker-compose run --rm flyway migrate`
-3. ✅ Vérifier `flyway info` (devrait montrer V1 → V10)
+3. ✅ Vérifier `flyway info` (devrait montrer V1 → V17)
 4. ✅ Exécuter les tests
 5. ✅ Documenter résultats
-
----
-
-*Document généré automatiquement · Mise à jour au fur et à mesure*
