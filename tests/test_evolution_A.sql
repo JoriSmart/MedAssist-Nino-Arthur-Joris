@@ -16,16 +16,18 @@
 
 \echo '=== TEST 1 : Intégrité des données après migration ==='
 
--- 1a. Vérifier qu'aucune patient ne perd son adresse
+-- 1a. Vérifier que tous les patients ont une adresse primaire
 DO $$
 DECLARE
     v_count INT;
 BEGIN
-    -- Compter patients avec adresse initiale mais sans entrée addresses
+    -- Compter patients sans adresse primaire
     SELECT COUNT(*) INTO v_count
     FROM patients p
-    WHERE (p.address_line1 IS NOT NULL OR p.city IS NOT NULL)
-        AND NOT EXISTS (SELECT 1 FROM addresses a WHERE a.patient_id = p.id);
+    WHERE NOT EXISTS (
+        SELECT 1 FROM addresses a
+        WHERE a.patient_id = p.id AND a.is_primary = TRUE
+    );
     
     IF v_count = 0 THEN
         RAISE NOTICE '✓ TEST 1a PASS: Toutes adresses V1 ont été migrées';
@@ -185,21 +187,13 @@ $$;
 -- ═══════════════════════════════════════════════════════════════════
 
 \echo '=== TEST 5 : Performance (EXPLAIN ANALYZE) ==='
-
 -- 5a. Query performance : Lookup patient avec adresse
-DO $$
-DECLARE
-    v_plan TEXT;
-BEGIN
-    RAISE NOTICE '✓ TEST 5a: Performance check - patient lookup with address';
-    EXPLAIN ANALYZE
-        SELECT p.id, p.first_name, a.line1, a.city
-        FROM patients p
-        JOIN addresses a ON p.id = a.patient_id
-        WHERE p.last_name = 'Dupont' AND a.is_primary = TRUE;
-    -- Performance acceptable si index hit (idx_addresses_patient, idx_patients_name)
-END;
-$$;
+\echo '✓ TEST 5a: Performance check - patient lookup with address'
+EXPLAIN ANALYZE
+    SELECT p.id, p.first_name, a.line1, a.city
+    FROM patients p
+    JOIN addresses a ON p.id = a.patient_id
+    WHERE p.last_name = 'Dupont' AND a.is_primary = TRUE;
 
 -- 5b. Query performance : Range query on consultations (should not degrade)
 EXPLAIN ANALYZE

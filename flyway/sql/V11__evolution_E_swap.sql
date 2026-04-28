@@ -31,18 +31,18 @@ $$;
 
 -- Renommer consultations → consultations_shadow
 ALTER TABLE consultations RENAME TO consultations_shadow;
-ALTER INDEX idx_consultations_patient RENAME TO idx_consultations_shadow_patient;
-ALTER INDEX idx_consultations_date RENAME TO idx_consultations_shadow_date;
-ALTER INDEX idx_consultations_doctor_id RENAME TO idx_consultations_shadow_doctor_id;
-ALTER INDEX idx_consultations_doctor_v2 RENAME TO idx_consultations_shadow_doctor_v2;
-ALTER INDEX idx_consultations_type RENAME TO idx_consultations_shadow_type;
+ALTER INDEX IF EXISTS idx_consultations_patient RENAME TO idx_consultations_shadow_patient;
+ALTER INDEX IF EXISTS idx_consultations_date RENAME TO idx_consultations_shadow_date;
+ALTER INDEX IF EXISTS idx_consultations_doctor_id RENAME TO idx_consultations_shadow_doctor_id;
+ALTER INDEX IF EXISTS idx_consultations_doctor_v2 RENAME TO idx_consultations_shadow_doctor_v2;
+ALTER INDEX IF EXISTS idx_consultations_type RENAME TO idx_consultations_shadow_type;
 
 -- Renommer consultations_v2 → consultations
 ALTER TABLE consultations_v2 RENAME TO consultations;
-ALTER INDEX idx_consultations_v2_patient RENAME TO idx_consultations_patient;
-ALTER INDEX idx_consultations_v2_doctor RENAME TO idx_consultations_doctor;
-ALTER INDEX idx_consultations_v2_date RENAME TO idx_consultations_date;
-ALTER INDEX idx_consultations_v2_type RENAME TO idx_consultations_type;
+ALTER INDEX IF EXISTS idx_consultations_v2_patient RENAME TO idx_consultations_patient;
+ALTER INDEX IF EXISTS idx_consultations_v2_doctor RENAME TO idx_consultations_doctor;
+ALTER INDEX IF EXISTS idx_consultations_v2_date RENAME TO idx_consultations_date;
+ALTER INDEX IF EXISTS idx_consultations_v2_type RENAME TO idx_consultations_type;
 
 -- Renommer les partitions
 ALTER TABLE consultations_2021 RENAME TO consultations_p2021;
@@ -71,6 +71,7 @@ DO $$
 DECLARE
     v_consultations_count INT;
     v_shadow_count INT;
+    v_partition_2021_count INT;
 BEGIN
     SELECT COUNT(*) INTO v_consultations_count FROM consultations;
     SELECT COUNT(*) INTO v_shadow_count FROM consultations_shadow;
@@ -89,11 +90,10 @@ BEGIN
     -- Test query sur partitions
     RAISE NOTICE '';
     RAISE NOTICE 'Partition Distribution:';
-    FOR v_count IN
-        SELECT COUNT(*) FROM consultations WHERE EXTRACT(YEAR FROM consultation_date) = 2021
-    LOOP
-        RAISE NOTICE '  2021: %', v_count;
-    END LOOP;
+    SELECT COUNT(*) INTO v_partition_2021_count
+    FROM consultations
+    WHERE consultation_date >= '2021-01-01' AND consultation_date < '2022-01-01';
+    RAISE NOTICE '  2021: %', v_partition_2021_count;
 END;
 $$;
 
@@ -103,11 +103,6 @@ $$;
 
 -- OPTION B : Supprimer après vérification (économise espace disque)
 -- DROP TABLE IF EXISTS consultations_shadow CASCADE;
-
-RAISE NOTICE '';
-RAISE NOTICE '=== SWAP Successful ===';
-RAISE NOTICE 'Old table available as consultations_shadow for rollback';
-RAISE NOTICE 'New partitioned table is now consultations (prod)';
 
 COMMENT ON TABLE consultations IS
 'V2 : Table partitionnée par année (consultation_date RANGE)

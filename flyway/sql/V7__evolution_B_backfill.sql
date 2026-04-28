@@ -52,7 +52,7 @@ FROM normalized_names;
 -- Utiliser seulement le 1er (rank=1) de chaque groupe normalized_group
 INSERT INTO doctors (rpps_number, first_name, last_name, specialty, created_at)
 SELECT 
-    MD5(d.normalized_group)::text as rpps_number,  -- Temporary RPPS (hashed normalized name)
+    SUBSTRING(MD5(d.normalized_group)::text, 1, 11) as rpps_number,  -- Temporary RPPS (hashed, 11 chars)
     d.first_name,
     d.last_name,
     'General Practice' as specialty,  -- Default specialty (peut être mis à jour manuellement)

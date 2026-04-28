@@ -21,27 +21,27 @@ CREATE TABLE consultations_v2 (
     is_paid BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id, consultation_date)  -- Partition key must be in PK
-) PARTITION BY RANGE (EXTRACT(YEAR FROM consultation_date));
+) PARTITION BY RANGE (consultation_date);
 
 -- Créer partitions pour chaque année
 CREATE TABLE consultations_2021 PARTITION OF consultations_v2
-    FOR VALUES FROM (2021) TO (2022);
+    FOR VALUES FROM ('2021-01-01') TO ('2022-01-01');
 
 CREATE TABLE consultations_2022 PARTITION OF consultations_v2
-    FOR VALUES FROM (2022) TO (2023);
+    FOR VALUES FROM ('2022-01-01') TO ('2023-01-01');
 
 CREATE TABLE consultations_2023 PARTITION OF consultations_v2
-    FOR VALUES FROM (2023) TO (2024);
+    FOR VALUES FROM ('2023-01-01') TO ('2024-01-01');
 
 CREATE TABLE consultations_2024 PARTITION OF consultations_v2
-    FOR VALUES FROM (2024) TO (2025);
+    FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
 
 CREATE TABLE consultations_2025 PARTITION OF consultations_v2
-    FOR VALUES FROM (2025) TO (2026);
+    FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
 
 -- Partition pour future données (2026+)
 CREATE TABLE consultations_future PARTITION OF consultations_v2
-    FOR VALUES FROM (2026) TO (MAXVALUE);
+    FOR VALUES FROM ('2026-01-01') TO (MAXVALUE);
 
 -- Créer indexes sur partitions
 CREATE INDEX idx_consultations_v2_patient ON consultations_v2 (patient_id);

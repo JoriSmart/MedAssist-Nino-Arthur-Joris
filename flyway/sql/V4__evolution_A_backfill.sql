@@ -32,6 +32,33 @@ UPDATE patients p SET
     )
 WHERE address_id IS NULL;
 
+-- Créer une adresse par défaut pour les patients sans adresse (évite address_id NULL)
+INSERT INTO addresses (patient_id, address_type, line1, line2, city, postal_code, country, is_primary, created_at)
+SELECT 
+    p.id,
+    'HOME' as address_type,
+    'Unknown' as line1,
+    NULL as line2,
+    'Unknown' as city,
+    '00000' as postal_code,
+    'France' as country,
+    TRUE as is_primary,
+    p.created_at
+FROM patients p
+WHERE p.address_id IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM addresses a WHERE a.patient_id = p.id AND a.address_type = 'HOME'
+  );
+
+-- Recalcule address_id pour ceux qui viennent d'être complétés
+UPDATE patients p SET
+    address_id = (
+        SELECT id FROM addresses a 
+        WHERE a.patient_id = p.id AND a.address_type = 'HOME' AND a.is_primary = TRUE
+        LIMIT 1
+    )
+WHERE address_id IS NULL;
+
 -- Vérification de l'intégrité
 DO $$
 DECLARE

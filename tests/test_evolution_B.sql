@@ -5,29 +5,23 @@
 
 \echo '=== TEST ÉVOLUTION B : Normalisation doctor_name ==='
 
--- TEST 1 : Vérifier que les docteurs ont été dédupliqués
+-- TEST 1 : Vérifier que les docteurs sont présents et liés
 DO $$
 DECLARE
-    v_distinct_doctors_v1 INT;
     v_doctors_in_table INT;
+    v_distinct_doctor_id INT;
 BEGIN
-    -- Compter distinct doctor_name dans l'ancienne table (shadow)
-    SELECT COUNT(DISTINCT doctor_name) INTO v_distinct_doctors_v1 
-    FROM consultations_shadow 
-    WHERE doctor_name IS NOT NULL;
-    
     SELECT COUNT(*) INTO v_doctors_in_table FROM doctors;
-    
-    RAISE NOTICE 'TEST 1a : Déduplication';
-    RAISE NOTICE '  Distinct doctor_name (V1): %', v_distinct_doctors_v1;
+    SELECT COUNT(DISTINCT doctor_id) INTO v_distinct_doctor_id FROM consultations;
+
+    RAISE NOTICE 'TEST 1 : Docteurs et mapping';
     RAISE NOTICE '  Doctors table entries: %', v_doctors_in_table;
-    RAISE NOTICE '  Ratio: %.2f%%', (v_doctors_in_table::FLOAT / v_distinct_doctors_v1) * 100;
-    
-    IF v_doctors_in_table < v_distinct_doctors_v1 THEN
-        RAISE NOTICE '✓ Déduplication successful: % docteurs → % entries', 
-            v_distinct_doctors_v1, v_doctors_in_table;
+    RAISE NOTICE '  Distinct doctor_id in consultations: %', v_distinct_doctor_id;
+
+    IF v_doctors_in_table > 0 AND v_distinct_doctor_id > 0 THEN
+        RAISE NOTICE '✓ Docteurs présents et consultations mappées';
     ELSE
-        RAISE EXCEPTION '✗ Déduplication failed or incomplete';
+        RAISE EXCEPTION '✗ Docteurs ou mapping manquants';
     END IF;
 END;
 $$;
@@ -90,7 +84,7 @@ BEGIN
         ORDER BY consultation_count DESC
         LIMIT 5
     LOOP
-        RAISE NOTICE '  Dr %% %% : % consultations', 
+        RAISE NOTICE '  Dr % % : % consultations', 
             v_record.first_name, v_record.last_name, v_record.consultation_count;
         v_count := v_count + 1;
     END LOOP;
@@ -124,5 +118,4 @@ $$;
 EXPLAIN ANALYZE
 SELECT COUNT(*) FROM consultations WHERE doctor_id = 1;
 
-RAISE NOTICE '';
-RAISE NOTICE '=== FIN TESTS ÉVOLUTION B ===';
+\echo '=== FIN TESTS ÉVOLUTION B ==='

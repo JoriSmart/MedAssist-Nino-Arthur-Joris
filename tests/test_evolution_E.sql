@@ -42,8 +42,8 @@ END;
 $$;
 
 -- TEST 2 : Vérifier que partition pruning fonctionne
-RAISE NOTICE '';
-RAISE NOTICE 'TEST 2 : Partition Pruning (EXPLAIN ANALYZE)';
+\echo ''
+\echo 'TEST 2 : Partition Pruning (EXPLAIN ANALYZE)'
 
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT COUNT(*) FROM consultations 
@@ -51,8 +51,8 @@ WHERE consultation_date >= '2024-01-01' AND consultation_date < '2025-01-01';
 -- Should only scan partition 2024
 
 -- TEST 3 : Performance query sur années multiples
-RAISE NOTICE '';
-RAISE NOTICE 'TEST 3 : Performance multi-year query';
+\echo ''
+\echo 'TEST 3 : Performance multi-year query'
 
 EXPLAIN ANALYZE
 SELECT COUNT(*) FROM consultations
@@ -134,21 +134,21 @@ END;
 $$;
 
 -- TEST 7 : Comparer performance old vs new
-RAISE NOTICE '';
-RAISE NOTICE 'TEST 7 : Performance Comparison (old shadow vs new partitioned)';
-RAISE NOTICE '';
-RAISE NOTICE 'Query: SELECT COUNT(*) WHERE consultation_date >= 2024-01-01';
+\echo ''
+\echo 'TEST 7 : Performance Comparison (old shadow vs new partitioned)'
+\echo ''
+\echo 'Query: SELECT COUNT(*) WHERE consultation_date >= 2024-01-01'
 
-RAISE NOTICE 'Old table (consultations_shadow):';
+\echo 'Old table (consultations_shadow):'
 EXPLAIN ANALYZE
 SELECT COUNT(*) FROM consultations_shadow 
 WHERE consultation_date >= '2024-01-01';
 
-RAISE NOTICE '';
-RAISE NOTICE 'New table (consultations - partitioned):';
+\echo ''
+\echo 'New table (consultations - partitioned):'
 EXPLAIN ANALYZE
 SELECT COUNT(*) FROM consultations 
 WHERE consultation_date >= '2024-01-01';
 
-RAISE NOTICE '';
-RAISE NOTICE '=== FIN TESTS ÉVOLUTION E ===';
+\echo ''
+\echo '=== FIN TESTS ÉVOLUTION E ==='
