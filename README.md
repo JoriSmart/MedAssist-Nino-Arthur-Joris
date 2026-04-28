@@ -1,6 +1,6 @@
 # 🏥 MedAssist - Migration de Base de Données V1 → V2
 
-**Équipe :** Nino, Arthur, Joris  
+**Équipe :** Nino, Joris  
 **Date de début :** 28/04/2026  
 **Technologies :** PostgreSQL 16 • Flyway 10 • Docker • SQL  
 **Status :** ✅ Scripts implémentés & documentés
